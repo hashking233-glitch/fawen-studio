@@ -282,11 +282,37 @@ button {
   align-self: stretch;
 }
 
-.align-tools {
-  display: inline-flex;
+.align-menu {
+  position: relative;
   flex: 0 0 auto;
+}
+
+.align-toggle {
+  list-style: none;
+  cursor: pointer;
+}
+
+.align-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.align-menu[open] .align-toggle {
+  background: #ffffff;
+}
+
+.align-menu-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(3, 30px);
   gap: 4px;
-  white-space: nowrap;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
 }
 
 .italic-label {
@@ -419,10 +445,27 @@ button {
   align-items: flex-start;
   flex: 0 0 auto;
   gap: 8px;
-  min-height: 88px;
+  min-height: 0;
   overflow-x: auto;
   overflow-y: hidden;
+  padding: 2px 0 4px;
+}
+
+.image-strip.has-images {
+  min-height: 88px;
   padding: 10px 0 12px;
+}
+
+.image-manager-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: var(--ink);
+  background: #fbfcfe;
+  font-size: 13px;
+  font-weight: 850;
 }
 
 .image-chip {

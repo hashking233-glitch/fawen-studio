@@ -68,11 +68,14 @@
           <button class="tool-button" type="button" data-format="code" title="代码块">{}</button>
           <button class="tool-button" type="button" data-format="titleBlock" title="居中标题块">T</button>
           <button class="tool-button" type="button" data-format="pageBreak" title="分页">⤓</button>
-          <span class="align-tools" aria-label="对齐工具">
-            <button class="tool-button" type="button" data-format="alignLeft" title="左对齐">←</button>
-            <button class="tool-button" type="button" data-format="alignCenter" title="居中对齐">≡</button>
-            <button class="tool-button" type="button" data-format="alignRight" title="右对齐">→</button>
-          </span>
+          <details id="alignMenu" class="align-menu">
+            <summary class="tool-button align-toggle" title="对齐方式" aria-label="对齐方式">≡</summary>
+            <div class="align-menu-panel" aria-label="对齐工具">
+              <button class="tool-button align-option" type="button" data-format="alignLeft" title="左对齐">←</button>
+              <button class="tool-button align-option" type="button" data-format="alignCenter" title="居中对齐">≡</button>
+              <button class="tool-button align-option" type="button" data-format="alignRight" title="右对齐">→</button>
+            </div>
+          </details>
           <select id="galleryLayoutInput" class="select-control" title="版式">
             <option value="auto">单图模式</option>
             <option value="two-cols">双图左右</option>

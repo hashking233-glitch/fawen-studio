@@ -22,6 +22,7 @@ const els = {
   imageInput: $("#imageInput"),
   galleryLayout: $("#galleryLayoutInput"),
   imageStrip: $("#imageStrip"),
+  alignMenu: $("#alignMenu"),
   textColor: $("#textColorInput"),
   accentColor: $("#accentColorInput"),
   highlightColor: $("#highlightColorInput"),
@@ -794,7 +795,17 @@ function updateImageStrip() {
   if (!doc || !els.imageStrip) return;
   const images = Object.values(doc.images || {});
   els.imageStrip.innerHTML = "";
-  if (!images.length) return;
+  els.imageStrip.classList.toggle("has-images", images.length > 0);
+  if (!images.length) {
+    const managerButton = document.createElement("button");
+    managerButton.className = "image-manager-button";
+    managerButton.type = "button";
+    managerButton.textContent = "素材管理";
+    managerButton.title = "上传图片";
+    managerButton.addEventListener("click", () => els.imageInput.click());
+    els.imageStrip.append(managerButton);
+    return;
+  }
 
   const clearButton = document.createElement("button");
   clearButton.className = "image-clear-button";
@@ -2404,6 +2415,16 @@ function bindEvents() {
       rememberContentSelection();
     });
     button.addEventListener("click", () => wrapSelection(button.dataset.format));
+  });
+  document.querySelectorAll(".align-menu [data-format]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (els.alignMenu) els.alignMenu.open = false;
+    });
+  });
+  document.addEventListener("click", (event) => {
+    if (els.alignMenu?.open && !els.alignMenu.contains(event.target)) {
+      els.alignMenu.open = false;
+    }
   });
 
   [els.highlightColor, els.inlineColor].forEach((input) => {
