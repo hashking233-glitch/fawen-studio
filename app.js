@@ -1334,6 +1334,14 @@ function parseBlocks(content) {
   const lines = normalizeMarkers(content).replace(/\r\n/g, "\n").split("\n");
   const blocks = [];
 
+  const textBlockFromLine = (rawLine, align = "") => {
+    const text = rawLine.trim();
+    if (text.startsWith("# ")) return { type: "h1", text: text.slice(2).trim(), align };
+    if (text.startsWith("## ")) return { type: "h2", text: text.slice(3).trim(), align };
+    if (text.startsWith("> ")) return { type: "quote", text: text.slice(2).trim(), align };
+    return { type: "p", text, align };
+  };
+
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i].trim();
     if (!line) continue;
@@ -1374,7 +1382,7 @@ function parseBlocks(content) {
 
     const alignSingle = line.match(/^:::\s*align\s+(left|center|right)\s+(.+)$/);
     if (alignSingle) {
-      blocks.push({ type: "p", text: alignSingle[2].trim(), align: alignSingle[1] });
+      blocks.push(textBlockFromLine(alignSingle[2], alignSingle[1]));
       continue;
     }
 
@@ -1387,7 +1395,7 @@ function parseBlocks(content) {
         if (alignedLine) alignLines.push(alignedLine);
         i += 1;
       }
-      alignLines.forEach((text) => blocks.push({ type: "p", text, align: alignStart[1] }));
+      alignLines.forEach((text) => blocks.push(textBlockFromLine(text, alignStart[1])));
       continue;
     }
 
@@ -1410,15 +1418,7 @@ function parseBlocks(content) {
       continue;
     }
 
-    if (line.startsWith("# ")) {
-      blocks.push({ type: "h1", text: line.slice(2).trim() });
-    } else if (line.startsWith("## ")) {
-      blocks.push({ type: "h2", text: line.slice(3).trim() });
-    } else if (line.startsWith("> ")) {
-      blocks.push({ type: "quote", text: line.slice(2).trim() });
-    } else {
-      blocks.push({ type: "p", text: line });
-    }
+    blocks.push(textBlockFromLine(line));
   }
 
   return blocks;
@@ -1430,14 +1430,14 @@ function normalizeMarkers(content) {
     .replace(/\[\[\s*gallery\s*:\s*([\s\S]*?)\s*\]\]/g, (marker) => marker.replace(/\s+/g, ""));
 }
 
-function parseInline(text) {
+function parseInline(text, active = {}) {
   const pieces = [];
   let i = 0;
   while (i < text.length) {
     if (text.startsWith("{color:", i)) {
-      const match = text.slice(i).match(/^\{color:(#[0-9a-fA-F]{6})\|([\s\S]*?)\}/);
+      const match = text.slice(i).match(/^\{color:(#[0-9a-fA-F]{6})\|([\s\S]*?)\s*\}/);
       if (match) {
-        pieces.push({ text: match[2], color: match[1] });
+        pieces.push(...parseInline(match[2], { ...active, color: match[1] }));
         i += match[0].length;
         continue;
       }
@@ -1446,7 +1446,7 @@ function parseInline(text) {
     if (text.startsWith("**", i)) {
       const close = text.indexOf("**", i + 2);
       if (close !== -1) {
-        pieces.push({ text: text.slice(i + 2, close), bold: true });
+        pieces.push(...parseInline(text.slice(i + 2, close), { ...active, bold: true }));
         i = close + 2;
         continue;
       }
@@ -1455,7 +1455,7 @@ function parseInline(text) {
     if (text.startsWith("==", i)) {
       const close = text.indexOf("==", i + 2);
       if (close !== -1) {
-        pieces.push({ text: text.slice(i + 2, close), highlight: true });
+        pieces.push(...parseInline(text.slice(i + 2, close), { ...active, highlight: true }));
         i = close + 2;
         continue;
       }
@@ -1464,7 +1464,7 @@ function parseInline(text) {
     if (text.startsWith("*", i)) {
       const close = text.indexOf("*", i + 1);
       if (close !== -1) {
-        pieces.push({ text: text.slice(i + 1, close), italic: true });
+        pieces.push(...parseInline(text.slice(i + 1, close), { ...active, italic: true }));
         i = close + 1;
         continue;
       }
@@ -1474,7 +1474,7 @@ function parseInline(text) {
       .map((marker) => text.indexOf(marker, i + 1))
       .filter((index) => index !== -1);
     const end = nextMarkers.length ? Math.min(...nextMarkers) : text.length;
-    pieces.push({ text: text.slice(i, end), bold: false, italic: false });
+    pieces.push({ ...active, text: text.slice(i, end) });
     i = end;
   }
   return pieces.filter((piece) => piece.text);
@@ -2384,9 +2384,9 @@ async function buildRichHtml(doc) {
   const blocks = parseBlocks(doc.content);
   const htmlParts = [];
   for (const block of blocks) {
-    if (block.type === "h1") htmlParts.push(`<h1 style="${styles.h1}">${inlineMarkdownToHtml(block.text)}</h1>`);
-    else if (block.type === "h2") htmlParts.push(`<h2 style="${styles.h2}">${inlineMarkdownToHtml(block.text)}</h2>`);
-    else if (block.type === "quote") htmlParts.push(`<blockquote style="${styles.quote}">${inlineMarkdownToHtml(block.text)}</blockquote>`);
+    if (block.type === "h1") htmlParts.push(`<h1 style="${styles.h1}${block.align ? `text-align:${block.align};` : ""}">${inlineMarkdownToHtml(block.text)}</h1>`);
+    else if (block.type === "h2") htmlParts.push(`<h2 style="${styles.h2}${block.align ? `text-align:${block.align};` : ""}">${inlineMarkdownToHtml(block.text)}</h2>`);
+    else if (block.type === "quote") htmlParts.push(`<blockquote style="${styles.quote}${block.align ? `text-align:${block.align};` : ""}">${inlineMarkdownToHtml(block.text)}</blockquote>`);
     else if (block.type === "code") htmlParts.push(codeBlockHtml(block, styles));
     else if (block.type === "titleBlock") htmlParts.push(`<section style="${styles.titleBlock}"><span style="${styles.titleBlockInner}">${inlineMarkdownToHtml(block.text)}</span></section>`);
     else if (block.type === "pageBreak") htmlParts.push(`<section style="height:42px;margin:24px 0;border-top:1px dashed #d8e0ea;"></section>`);
